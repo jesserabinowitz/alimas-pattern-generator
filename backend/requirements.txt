@@ -6,6 +6,9 @@ passlib[bcrypt]
 bcrypt<4
 python-multipart
 pydantic[email]
+aiofiles
 matplotlib
 scipy
+numpy
+setuptools
 git+https://github.com/fmetivier/OpenPattern.git
