@@ -7,7 +7,6 @@ from __future__ import annotations
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import Response, FileResponse
-from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel, Field
 import os
 
@@ -31,13 +30,11 @@ app.add_middleware(
 )
 
 # Serve frontend
-FRONTEND_DIR = os.path.join(os.path.dirname(__file__), "..", "frontend")
-if os.path.isdir(FRONTEND_DIR):
-    app.mount("/static", StaticFiles(directory=FRONTEND_DIR), name="static")
+_FRONTEND = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "frontend", "index.html")
 
-    @app.get("/")
-    def serve_frontend():
-        return FileResponse(os.path.join(FRONTEND_DIR, "index.html"))
+@app.get("/")
+def serve_frontend():
+    return FileResponse(_FRONTEND)
 
 # ------------------------------------------------------------------
 # Garment registry

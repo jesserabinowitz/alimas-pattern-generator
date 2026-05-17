@@ -279,6 +279,53 @@
     ::-webkit-scrollbar { width: 6px; height: 6px; }
     ::-webkit-scrollbar-track { background: transparent; }
     ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
+
+    /* ── Mobile ── */
+    @media (max-width: 640px) {
+      body {
+        grid-template-columns: 1fr;
+        grid-template-rows: auto 1fr;
+      }
+      header .tagline { display: none; }
+      header h1 { font-size: .82rem; white-space: nowrap; }
+      .get-printed-label { display: none; }
+      header a { margin-left: 8px; }
+      #auth-logged-out, #auth-logged-in { flex-wrap: nowrap; }
+      #auth-logged-out .btn-text, #auth-logged-in .btn-text { white-space: nowrap; font-size: .78rem; padding: 4px 5px; }
+      #btn-profile { max-width: 100px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: .75rem; }
+      main { display: none !important; }
+      aside { border-right: none; overflow-x: hidden; padding: 16px; }
+      .garment-btn { max-width: 100%; }
+      .garment-btn .g-desc { white-space: normal; word-break: break-word; }
+      #auth-modal  { width: min(92vw, 420px); }
+      #profile-modal { width: min(92vw, 480px); }
+      #inline-preview {
+        display: none;
+        flex-direction: column;
+        gap: 12px;
+        margin-top: 4px;
+      }
+      #inline-preview .ip-svg-wrap {
+        background: var(--surface);
+        border: 1px solid var(--border);
+        border-radius: var(--radius);
+        box-shadow: var(--shadow);
+        padding: 12px;
+        overflow: auto;
+        max-width: 100%;
+      }
+      #inline-preview .ip-svg-wrap svg { height: auto; display: block; }
+      #inline-preview .ip-title { font-size: .85rem; color: var(--muted); }
+      #inline-preview .ip-error {
+        background: #fdf0f0; border: 1px solid #e8b4b4;
+        border-radius: var(--radius); padding: 12px 16px;
+        color: var(--danger); font-size: .85rem; text-align: center;
+      }
+      #inline-preview .ip-spinner {
+        display: flex; flex-direction: column; align-items: center;
+        gap: 10px; color: var(--muted); font-size: .85rem; padding: 16px 0;
+      }
+    }
   </style>
 </head>
 <body>
@@ -305,7 +352,7 @@
       <polyline points="6 9 6 2 18 2 18 9"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/>
       <rect x="6" y="14" width="12" height="8"/>
     </svg>
-    get it printed
+    <span class="get-printed-label">get it printed</span>
   </a>
 
   <div id="auth-bar" style="margin-left:auto">
@@ -322,8 +369,7 @@
 
 <aside>
   <section>
-    <h2>Garment</h2>
-    <div id="garment-list">
+<div id="garment-list">
       <p style="font-size:.82rem;color:var(--muted)">Loading…</p>
     </div>
   </section>
@@ -339,6 +385,7 @@
       <button class="btn btn-primary" id="btn-preview">Preview</button>
       <button class="btn btn-outline" id="btn-download">Download PDF</button>
     </div>
+    <div id="inline-preview"></div>
     <button id="btn-save-measurements" style="display:none">Save measurements to profile</button>
     <span id="save-confirm">Measurements saved!</span>
   </div>
@@ -563,8 +610,9 @@ function renderGarmentList() {
     const btn = document.createElement("button");
     btn.className = "garment-btn";
     btn.dataset.id = g.id;
+    const desc = g.description.replace(/\s*[—–-]+\s*\w+ method\.?$/i, '');
     btn.innerHTML = `<span class="g-label">${g.label}</span>
-                     <span class="g-desc">${g.description}</span>`;
+                     <span class="g-desc">${desc}</span>`;
     btn.addEventListener("click", () => selectGarment(g));
     el.appendChild(btn);
   });
@@ -909,31 +957,56 @@ document.getElementById("btn-logout").addEventListener("click", () => {
 });
 
 // ── UI helpers ────────────────────────────────────────────────────────────────
+function isMobile() { return window.innerWidth <= 640; }
+
 function showSpinner() {
-  document.getElementById("placeholder").style.display  = "none";
-  document.getElementById("preview-wrap").style.display = "none";
-  document.getElementById("error-msg").style.display    = "none";
-  document.getElementById("spinner").style.display      = "flex";
+  if (isMobile()) {
+    const ip = document.getElementById("inline-preview");
+    ip.innerHTML = '<div class="ip-spinner"><div class="spin"></div><span>Generating pattern…</span></div>';
+    ip.style.display = "flex";
+  } else {
+    document.getElementById("placeholder").style.display  = "none";
+    document.getElementById("preview-wrap").style.display = "none";
+    document.getElementById("error-msg").style.display    = "none";
+    document.getElementById("spinner").style.display      = "flex";
+  }
   setButtons(true);
 }
 function showSVG(svg) {
-  document.getElementById("spinner").style.display      = "none";
-  document.getElementById("placeholder").style.display  = "none";
-  document.getElementById("error-msg").style.display    = "none";
-  document.getElementById("preview-wrap").style.display = "flex";
-  document.getElementById("preview-title").textContent  = `${activeGarment.label} — preview`;
-  document.getElementById("svg-container").innerHTML = svg;
+  if (isMobile()) {
+    const ip = document.getElementById("inline-preview");
+    ip.innerHTML = `<div class="ip-title">${activeGarment.label} — preview</div>
+                    <div class="ip-svg-wrap">${svg}</div>`;
+    ip.querySelector("svg").style.maxWidth = "100%";
+    ip.style.display = "flex";
+  } else {
+    document.getElementById("spinner").style.display      = "none";
+    document.getElementById("placeholder").style.display  = "none";
+    document.getElementById("error-msg").style.display    = "none";
+    document.getElementById("preview-wrap").style.display = "flex";
+    document.getElementById("preview-title").textContent  = `${activeGarment.label} — preview`;
+    document.getElementById("svg-container").innerHTML = svg;
+  }
   setButtons(false);
 }
 function showError(msg) {
-  document.getElementById("spinner").style.display      = "none";
-  document.getElementById("preview-wrap").style.display = "none";
-  const el = document.getElementById("error-msg");
-  el.style.display = "block";
-  el.textContent   = `Error: ${msg}`;
+  if (isMobile()) {
+    const ip = document.getElementById("inline-preview");
+    ip.innerHTML = `<div class="ip-error">Error: ${msg}</div>`;
+    ip.style.display = "flex";
+  } else {
+    document.getElementById("spinner").style.display      = "none";
+    document.getElementById("preview-wrap").style.display = "none";
+    const el = document.getElementById("error-msg");
+    el.style.display = "block";
+    el.textContent   = `Error: ${msg}`;
+  }
   setButtons(false);
 }
 function clearPreview() {
+  const ip = document.getElementById("inline-preview");
+  ip.style.display = "none";
+  ip.innerHTML = "";
   document.getElementById("placeholder").style.display  = "flex";
   document.getElementById("preview-wrap").style.display = "none";
   document.getElementById("error-msg").style.display    = "none";
